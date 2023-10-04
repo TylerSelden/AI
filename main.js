@@ -1,25 +1,60 @@
 const Brain = require('Brain.js');
-
-const trainingData = [
-  'Jane saw Doug.',
-  'Doug saw Jane.',
-  'Spot saw Doug and Jane looking at each other.',
-  'It was love at first sight, and Spot had a frontrow seat. It was a very special moment for all.'
-];
-
+const fs = require('fs');
+const { triggers, outputs } = require('./data.js');
 const lstm = new Brain.recurrent.LSTM();
-const result = lstm.train(trainingData, {
-  iterations: 1500,
-  log: details => console.log(details),
-  errorThresh: 0.011
-});
 
-const run1 = lstm.run('Jane');
-const run2 = lstm.run('Doug');
-const run3 = lstm.run('Spot');
-const run4 = lstm.run('It');
+var config = {
+  read: true,
+  train: false
+}
+var trainingData = [];
 
-console.log('run 1: Jane' + run1);
-console.log('run 2: Doug' + run2);
-console.log('run 3: Spot' + run3);
-console.log('run 4: It' + run4);
+function initialize() {
+  for (var i in triggers) {
+    var triggerList = triggers[i];
+    var outputList = outputs[i];
+    for (var trigger of triggerList) {
+      for (var output of outputList) {
+        trainingData.push({ input: trigger, output: output });
+      }
+    }
+  }
+}
+
+function train() {
+  if (config.read) {
+    console.log("Reading from file....");
+    lstm.fromJSON(JSON.parse(fs.readFileSync('model.json')));
+  }
+  if (!config.train) return;
+  console.log("Training model...");
+  lstm.train(trainingData, {
+    iterations: 100,
+    logPeriod: 1,
+    log: details => console.log(details),
+    callback: () => {
+      console.log("Autosave...");
+      const json = lstm.toJSON();
+      fs.writeFileSync('model.json', JSON.stringify(json));
+    },
+    callbackPeriod: 5,
+    errorThresh: 0.011
+  });
+
+  const json = lstm.toJSON();
+  fs.writeFileSync('model.json', JSON.stringify(json));
+}
+
+function test() {
+  query('hello');
+  query('test');
+  query('bye');
+}
+
+function query(text) {
+  console.log(`${text}: ${lstm.run(text)}`);
+}
+
+initialize();
+train();
+test();
