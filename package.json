@@ -1,0 +1,22 @@
+{
+  "name": "ai",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "node main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TylerSelden/AI.git"
+  },
+  "author": "Tyler Selden",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TylerSelden/AI/issues"
+  },
+  "homepage": "https://github.com/TylerSelden/AI#readme",
+  "dependencies": {
+    "brain.js": "^2.0.0-beta.23"
+  }
+}
