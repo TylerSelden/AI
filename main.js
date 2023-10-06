@@ -6,8 +6,23 @@ const lstm = new Brain.recurrent.LSTM();
 var config = {
   read: true,
   train: true,
-  iterations: -5 // just ignore this
+  iterations: -5
 }
+var logData = {
+  status: "Waiting...",
+  details: null,
+  testResults: "None"
+}
+var logDataProxy = new Proxy(logData, {
+  set: function (target, key, value) {
+      target[key] = value;
+      console.clear();
+      console.log(`Status: ${logData.status}\nDetails: ${logData.details}\n\nLast test results:\n${logData.testResults}`);
+    
+      return true;
+  }
+});
+
 var trainingData = [];
 
 function initialize() {
@@ -24,25 +39,24 @@ function initialize() {
 
 function train() {
   if (config.read) {
-    console.log("Loading model...");
+    logDataProxy.status = "Loading model...";
     lstm.fromJSON(JSON.parse(fs.readFileSync('model.json')));
-    console.log("Model loaded.");
+    logDataProxy.status = "Model loaded.";
   }
   if (!config.train) return;
-  console.log("-- Begin training --");
+  logDataProxy.status = "Training";
   lstm.train(trainingData, {
     iterations: Infinity,
-    learningRate: 0.4,
     logPeriod: 1,
-    log: details => console.log(details),
+    log: details => {
+      logDataProxy.details = details;
+    },
     callback: () => {
       config.iterations += 5;
-      console.log("\nAutosaving...");
-      console.log("Autosave complete.\n");
+      logDataProxy.status = "Autosaving";
       const json = lstm.toJSON();
       fs.writeFileSync('model.json', JSON.stringify(json));
-      
-      console.log(config.iterations);
+      logDataProxy.status = "Autosave Complete";
       if (config.iterations % 10 == 0) {
         test();
       }
@@ -50,21 +64,18 @@ function train() {
     callbackPeriod: 5,
     errorThresh: 0.011
   });
-
-  const json = lstm.toJSON();
-  fs.writeFileSync('model.json', JSON.stringify(json));
 }
 
 function test() {
-  console.log("\nRun tests.\n=========================");
+  logDataProxy.status = "Running tests";
+  logDataProxy.testResults = "";
   query('hello');
   query('test');
   query('bye');
-  console.log('=========================\n')
 }
 
 function query(text) {
-  console.log(`${text}: ${lstm.run(text)}`);
+  logDataProxy.testResults += `${text}: ${lstm.run(text)}\n`;
 }
 
 initialize();
