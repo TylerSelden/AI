@@ -5,7 +5,8 @@ const lstm = new Brain.recurrent.LSTM();
 
 var config = {
   read: true,
-  train: false
+  train: true,
+  iterations: -5 // just ignore this
 }
 var trainingData = [];
 
@@ -23,19 +24,28 @@ function initialize() {
 
 function train() {
   if (config.read) {
-    console.log("Reading from file....");
+    console.log("Loading model...");
     lstm.fromJSON(JSON.parse(fs.readFileSync('model.json')));
+    console.log("Model loaded.");
   }
   if (!config.train) return;
-  console.log("Training model...");
+  console.log("-- Begin training --");
   lstm.train(trainingData, {
-    iterations: 100,
+    iterations: Infinity,
+    learningRate: 0.4,
     logPeriod: 1,
     log: details => console.log(details),
     callback: () => {
-      console.log("Autosave...");
+      config.iterations += 5;
+      console.log("\nAutosaving...");
+      console.log("Autosave complete.\n");
       const json = lstm.toJSON();
       fs.writeFileSync('model.json', JSON.stringify(json));
+      
+      console.log(config.iterations);
+      if (config.iterations % 10 == 0) {
+        test();
+      }
     },
     callbackPeriod: 5,
     errorThresh: 0.011
@@ -46,9 +56,11 @@ function train() {
 }
 
 function test() {
+  console.log("\nRun tests.\n=========================");
   query('hello');
   query('test');
   query('bye');
+  console.log('=========================\n')
 }
 
 function query(text) {
